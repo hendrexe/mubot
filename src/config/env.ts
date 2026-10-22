@@ -8,6 +8,8 @@ const schema = z.object({
   DISCORD_CLIENT_ID: z.string().min(1, 'is required'),
   DEV_GUILD_ID: z.string().optional().transform(emptyToUndefined),
   DATABASE_PATH: z.string().default('./data/bot.sqlite'),
+  CHALLENGERMODE_REFRESH_KEY: z.string().min(1, 'is required'),
+  CHALLENGERMODE_POLL_INTERVAL_MINUTES: z.coerce.number().positive().default(360),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });

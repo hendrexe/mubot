@@ -1,10 +1,11 @@
-# MultiBot
+# Maynooth Marshal
 
 A modular, multi-purpose Discord bot built with **discord.js v14** and **TypeScript**.
-The first feature is **temporary voice channels**.
 
 - **Temp voice channels** – admins designate a _target_ channel; joining it creates a personal
   channel and moves you in. The creator controls (only) that channel. It is deleted when empty.
+- **ChallengerMode** – post tournament standings, and automatically announce a team's finished
+  matches in a Discord channel.
 - **Config-first** – every base setting lives in one typed file: [`src/config/bot.config.ts`](src/config/bot.config.ts).
 - **Production-minded** – SQLite persistence with migrations, crash-safe startup reconciliation,
   structured logging, validated env, graceful shutdown, tests, CI, Docker.
@@ -13,10 +14,17 @@ The first feature is **temporary voice channels**.
 
 ```bash
 npm install
-cp .env.example .env        # fill in DISCORD_TOKEN and DISCORD_CLIENT_ID
 npm run invite              # prints an invite link with exactly the permissions needed
 npm run commands:deploy     # registers slash commands (set DEV_GUILD_ID for instant updates)
 npm run dev                 # start with hot reload
+```
+
+Create a `.env` file in the project root with the required credentials:
+
+```dotenv
+DISCORD_TOKEN=your-discord-bot-token
+DISCORD_CLIENT_ID=your-discord-application-id
+CHALLENGERMODE_REFRESH_KEY=your-approved-refresh-key
 ```
 
 Requires Node.js ≥ 22 (a `better-sqlite3` requirement). No privileged intents are needed (only `Guilds` and `GuildVoiceStates`).
@@ -54,11 +62,45 @@ Name templates support `{displayName}` and `{username}`, e.g. `🎮 {displayName
 When the owner leaves while others stay, ownership **transfers** automatically (or the channel
 becomes **unclaimed** – see `ownerLeaveBehavior`). Anyone inside can then `/voice claim` it.
 
+## Using ChallengerMode
+
+Needs a refresh key from an approved application in the
+[Challengermode developer portal](https://www.challengermode.com/developers/applications), set as
+`CHALLENGERMODE_REFRESH_KEY`. The bot exchanges it for short-lived access tokens automatically.
+Tournament and team options accept a Challengermode link or a plain ID; `team` also accepts a name.
+All commands require _Manage Server_ except where noted.
+
+| Command                                               | What it does                                                                         |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `/challengermode watch-team tournament team channel`  | Automatically post the team's finished matches in `channel`.                         |
+| `/challengermode list-watches`                        | List watched teams in this server (with their IDs).                                  |
+| `/challengermode unwatch-team id`                     | Stop a watch.                                                                        |
+| `/challengermode last-result tournament team [count]` | Post the team's latest finished match(es) (1–5) in the current channel, right now.   |
+| `/challengermode setup-results tournament-id channel` | Choose the channel for a tournament's final standings.                               |
+| `/challengermode post-results tournament-id`          | Post the standings currently available for the tournament to its configured channel. |
+
+Example:
+
+```
+/challengermode watch-team tournament: https://www.challengermode.com/s/IrelandCollegiate/tournaments/70af0d1c-6f7a-423c-35ba-08df10190155 team: https://www.challengermode.com/teams/93770454-0174-4444-5658-08df1e6a7107 channel: #match-results
+```
+
+Watches are checked immediately at startup and then every `CHALLENGERMODE_POLL_INTERVAL_MINUTES`
+(default `360`, i.e. 6 hours). Set that optional variable in `.env` to a positive number of minutes.
+Matches already finished when a watch is created are not announced (use `last-result` for those).
+A watch is removed automatically once its tournament has ended and all match announcements have
+succeeded. The team must already be registered in the tournament.
+
+> Don't run two bot instances with the same token (e.g. local + cloud): both would answer commands
+> and post matches. Use a separate Discord application for development.
+
 ## Configuration
 
 Three layers, from broad to specific:
 
-1. **`.env`** – secrets and deployment (token, DB path, log level). Validated on startup.
+1. **`.env`** – `DISCORD_TOKEN`, `DISCORD_CLIENT_ID`, and `CHALLENGERMODE_REFRESH_KEY` are required.
+   `DEV_GUILD_ID`, `DATABASE_PATH`, `LOG_LEVEL`, and `CHALLENGERMODE_POLL_INTERVAL_MINUTES` are
+   optional; the poll interval defaults to 360 minutes. Values are validated on startup.
 2. **`src/config/bot.config.ts`** – global defaults and feature flags. Every option is documented
    in [`src/config/types.ts`](src/config/types.ts). Highlights:
 
@@ -89,8 +131,13 @@ src/
 ├── core/                     framework glue: types, logger, errors, event/command registry
 ├── database/                 SQLite connection + versioned migrations
 ├── commands/                 slash commands (thin: parse input → call a service → respond)
+│   └── tourney.ts            ChallengerMode tournament and team-watch commands
 ├── events/                   gateway event handlers
 ├── modules/
+│   ├── challengermode/       tournament results + team match watcher
+│   │   ├── service.ts        API auth (refresh key), queries, watch logic
+│   │   ├── watcher.ts        polling loop + match announcement embeds
+│   │   └── repository.ts     persistence port + SQLite implementation
 │   └── tempVoice/            ← the feature
 │       ├── service.ts        lifecycle: create / delete / ownership hand-off / startup sweep
 │       ├── controls.ts       owner actions + all authorisation checks

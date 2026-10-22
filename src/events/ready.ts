@@ -10,5 +10,7 @@ export const ready = defineEvent({
     if (ctx.config.tempVoice.enabled) {
       await ctx.tempVoice.sweep();
     }
+
+    ctx.matchWatcher.start();
   },
 });

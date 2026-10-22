@@ -10,6 +10,9 @@ import { events } from './events';
 import { TempVoiceControls } from './modules/tempVoice/controls';
 import { SqliteTempVoiceRepository } from './modules/tempVoice/repository';
 import { TempVoiceService } from './modules/tempVoice/service';
+import { SqliteChallengerModeRepository } from './modules/challengermode/repository';
+import { ChallengerModeService } from './modules/challengermode/service';
+import { MatchWatcher } from './modules/challengermode/watcher';
 
 async function main(): Promise<void> {
   const db = createDatabase(env.DATABASE_PATH);
@@ -31,6 +34,14 @@ async function main(): Promise<void> {
     tempVoiceLogger,
   );
 
+  const challengermodeRepo = new SqliteChallengerModeRepository(db);
+  const challengermode = new ChallengerModeService(challengermodeRepo);
+  const matchWatcher = new MatchWatcher(
+    client,
+    challengermode,
+    logger.child({ module: 'challengermode' }),
+  );
+
   const ctx: AppContext = {
     client,
     config: botConfig,
@@ -39,6 +50,8 @@ async function main(): Promise<void> {
     commands: buildCommandMap(commands),
     tempVoice,
     voiceControls,
+    challengermode,
+    matchWatcher,
   };
 
   registerEvents(client, ctx, events);

@@ -2,6 +2,7 @@ import { botConfig } from '../config/bot.config';
 import type { Command } from '../core/types';
 import { tempVcCommand } from './tempvc';
 import { voiceCommand } from './voice';
+import { challengermodeCommand } from './tourney';
 
 /**
  * Register new commands here. Feature flags in `bot.config.ts` decide which are active, so
@@ -9,4 +10,5 @@ import { voiceCommand } from './voice';
  */
 export const commands: Command[] = [
   ...(botConfig.tempVoice.enabled ? [tempVcCommand, voiceCommand] : []),
+  challengermodeCommand,
 ];
