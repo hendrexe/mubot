@@ -8,6 +8,8 @@ import type { BotConfig } from '../config/types';
 import type { Db } from '../database';
 import type { TempVoiceControls } from '../modules/tempVoice/controls';
 import type { TempVoiceService } from '../modules/tempVoice/service';
+import type { ChallengerModeService } from '../modules/challengermode/service';
+import type { MatchWatcher } from '../modules/challengermode/watcher';
 import type { Logger } from './logger';
 
 /** Everything a command or event handler may need. Built once in `index.ts`. */
@@ -19,6 +21,8 @@ export interface AppContext {
   commands: ReadonlyMap<string, Command>;
   tempVoice: TempVoiceService;
   voiceControls: TempVoiceControls;
+  challengermode: ChallengerModeService;
+  matchWatcher: MatchWatcher;
 }
 
 export interface Command {

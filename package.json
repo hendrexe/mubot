@@ -1,6 +1,6 @@
 {
-  "name": "multi-bot",
-  "version": "0.1.0",
+  "name": "Maynooth Marshal",
+  "version": "0.2.0",
   "private": true,
   "description": "Modular, multi-purpose Discord bot built with discord.js and TypeScript",
   "main": "dist/index.js",
@@ -17,9 +17,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write ."
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

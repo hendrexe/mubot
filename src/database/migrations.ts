@@ -29,6 +29,37 @@ const migrations: readonly string[] = [
   CREATE INDEX idx_temp_voice_channels_guild ON temp_voice_channels (guild_id);
   CREATE INDEX idx_temp_voice_channels_target ON temp_voice_channels (target_id);
   `,
+  /* 2 – challengermode results configurations */
+  `
+  CREATE TABLE tournament_results_configs (
+    tournament_id TEXT PRIMARY KEY,
+    guild_id      TEXT NOT NULL,
+    channel_id    TEXT NOT NULL,
+    created_at    INTEGER NOT NULL
+  );
+  CREATE INDEX idx_tournament_results_configs_guild ON tournament_results_configs (guild_id);
+  `,
+  /* 3 – team match watches */
+  `
+  CREATE TABLE team_match_watches (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id        TEXT NOT NULL,
+    channel_id      TEXT NOT NULL,
+    tournament_id   TEXT NOT NULL,
+    tournament_name TEXT NOT NULL,
+    lineup_id       TEXT NOT NULL,
+    team_name       TEXT NOT NULL,
+    created_at      INTEGER NOT NULL,
+    UNIQUE (tournament_id, lineup_id, channel_id)
+  );
+  CREATE INDEX idx_team_match_watches_guild ON team_match_watches (guild_id);
+
+  CREATE TABLE team_match_reported (
+    watch_id INTEGER NOT NULL REFERENCES team_match_watches (id) ON DELETE CASCADE,
+    match_id TEXT NOT NULL,
+    PRIMARY KEY (watch_id, match_id)
+  );
+  `,
 ];
 
 export function migrate(db: Db): void {
